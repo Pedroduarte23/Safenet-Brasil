@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>SafeNet Brasil</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+
+    <h1 class="text-center mb-4">
+        🛡️ SafeNet Brasil
+    </h1>
+
+    <div class="row mb-4">
+
+        <div class="col-md-3">
+
+            <div class="card shadow text-center">
+
+                <div class="card-body">
+
+                    <h5>Total</h5>
+
+                    <h2>{{ total }}</h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow text-center">
+
+                <div class="card-body">
+
+                    <h5>📞 Telefones</h5>
+
+                    <h2>{{ telefones }}</h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow text-center">
+
+                <div class="card-body">
+
+                    <h5>💳 PIX</h5>
+
+                    <h2>{{ pix }}</h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow text-center">
+
+                <div class="card-body">
+
+                    <h5>🌐 Sites</h5>
+
+                    <h2>{{ sites }}</h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card shadow">
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                <div class="input-group">
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="pesquisa"
+                        placeholder="Telefone, PIX ou Site"
+                        required
+                    >
+
+                    <button class="btn btn-primary">
+                        Pesquisar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    {% if denuncias %}
+
+    <div class="card shadow mt-4">
+
+        <div class="card-body">
+
+            <h3 class="text-danger">
+                ⚠️ Denúncias encontradas
+            </h3>
+
+            {% for denuncia in denuncias %}
+
+            <div class="border rounded p-3 mt-3">
+
+                <p>
+                    <strong>Tipo:</strong>
+                    {{ denuncia[0] }}
+                </p>
+
+                <p>
+                    <strong>Informação:</strong>
+                    {{ denuncia[1] }}
+                </p>
+
+                <p>
+                    <strong>Descrição:</strong>
+                    {{ denuncia[2] }}
+                </p>
+
+                <p>
+                    <strong>Registrado em:</strong>
+                    {{ denuncia[3] }}
+                </p>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+    <div class="text-center mt-4">
+
+        <a href="/denuncia" class="btn btn-success">
+            ➕ Registrar Denúncia
+        </a>
+
+    </div>
+
+    <div class="text-center mt-3">
+
+        <a href="/login" class="btn btn-dark">
+            🔐 Painel Administrativo
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Editar Denúncia - SafeNet Brasil</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+
+    <div class="card shadow">
+
+        <div class="card-body">
+
+            <h2 class="mb-4">
+                ✏️ Editar Denúncia
+            </h2>
+
+            <form method="POST">
+
+                <label>Tipo</label>
+
+                <select
+                    name="tipo"
+                    class="form-control"
+                    required
+                >
+
+                    <option value="Telefone"
+                    {% if denuncia[1] == "Telefone" %}selected{% endif %}>
+                    Telefone
+                    </option>
+
+                    <option value="PIX"
+                    {% if denuncia[1] == "PIX" %}selected{% endif %}>
+                    PIX
+                    </option>
+
+                    <option value="Site"
+                    {% if denuncia[1] == "Site" %}selected{% endif %}>
+                    Site
+                    </option>
+
+                </select>
+
+                <br>
+
+                <label>Informação</label>
+
+                <input
+                    type="text"
+                    name="valor"
+                    class="form-control"
+                    value="{{ denuncia[2] }}"
+                    required
+                >
+
+                <br>
+
+                <label>Descrição</label>
+
+                <textarea
+                    name="descricao"
+                    class="form-control"
+                    rows="5"
+                    required
+                >{{ denuncia[3] }}</textarea>
+
+                <br>
+
+                <button
+                    type="submit"
+                    class="btn btn-success"
+                >
+                    💾 Salvar Alterações
+                </button>
+
+                <a
+                    href="/admin"
+                    class="btn btn-secondary"
+                >
+                    Cancelar
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

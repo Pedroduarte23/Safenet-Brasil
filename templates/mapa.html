@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+<meta charset="UTF-8">
+<title>Mapa de Ataques - SOC</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    background: #05070d;
+    color: #00ff9d;
+    font-family: monospace;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#map {
+    width: 100%;
+    height: 85vh;
+    position: relative;
+    background: url("https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg");
+    background-size: cover;
+    border: 2px solid #00ff9d;
+}
+
+/* pontos de ataque */
+.dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(2); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* cores por risco */
+.critical { background: red; box-shadow: 0 0 10px red; }
+.high { background: orange; box-shadow: 0 0 10px orange; }
+.medium { background: yellow; box-shadow: 0 0 10px yellow; }
+.low { background: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
+
+/* painel superior */
+.topbar {
+    padding: 10px;
+    border-bottom: 1px solid #00ff9d;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="topbar">
+    🌍 LIVE ATTACK MAP - SAFE NET SOC
+    <a href="/admin" style="float:right;color:#00ff9d;">← Voltar</a>
+</div>
+
+<h1>Mapa Global de Ataques em Tempo Real</h1>
+
+<div id="map"></div>
+
+<script>
+
+// cria posição aleatória no mapa
+function randomPosition() {
+    return {
+        x: Math.random() * 90,
+        y: Math.random() * 80
+    };
+}
+
+// adiciona ataque no mapa
+function addAttack(risk) {
+
+    let dot = document.createElement("div");
+    dot.classList.add("dot");
+
+    let r = risk.toLowerCase();
+
+    if (r.includes("critical")) dot.classList.add("critical");
+    else if (r.includes("high")) dot.classList.add("high");
+    else if (r.includes("medium")) dot.classList.add("medium");
+    else dot.classList.add("low");
+
+    let pos = randomPosition();
+
+    dot.style.left = pos.x + "%";
+    dot.style.top = pos.y + "%";
+
+    document.getElementById("map").appendChild(dot);
+
+    setTimeout(() => {
+        dot.remove();
+    }, 12000);
+}
+
+// busca dados do backend
+async function fetchAttacks() {
+
+    try {
+        const res = await fetch("/api/attacks");
+        const data = await res.json();
+
+        data.forEach(a => {
+            addAttack(a.risco);
+        });
+
+    } catch (e) {
+        console.log("erro mapa");
+    }
+}
+
+// loop em tempo real
+setInterval(fetchAttacks, 3000);
+
+</script>
+
+</body>
+</html>
