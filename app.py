@@ -2,22 +2,24 @@ from flask import Flask, render_template, request, redirect, session
 from flask_socketio import SocketIO
 import sqlite3
 import random
-import time
 import threading
+import time
 
-# =========================
-# APP CONFIG
-# =========================
 app = Flask(__name__)
 app.secret_key = "safenet_brasil_2026"
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading"
+)
 
 
 # =========================
 # BANCO
 # =========================
 def init_db():
+
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
@@ -39,53 +41,126 @@ init_db()
 
 
 # =========================
-# SIEM STREAM (REAL TIME)
+# EVENTOS SIEM
 # =========================
 def gerar_eventos():
 
-    eventos = ["LOGIN_FAIL", "PIX_FRAUD", "PORT_SCAN", "BRUTE_FORCE", "MALWARE"]
+    eventos = [
+        "LOGIN_FAIL",
+        "PIX_FRAUD",
+        "PORT_SCAN",
+        "BRUTE_FORCE",
+        "MALWARE"
+    ]
 
     while True:
 
-        event = {
+        evento = {
             "tipo": random.choice(eventos),
-            "risco": random.choice(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
+            "risco": random.choice(
+                ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+            ),
             "ip": f"10.0.0.{random.randint(1,255)}",
             "user": f"user{random.randint(1,50)}"
         }
 
-        # salva no banco
-        conn = sqlite3.connect("database.db")
-        cursor = conn.cursor()
-
-        cursor.execute("""
-        INSERT INTO denuncias (tipo, valor, descricao, risco)
-        VALUES (?, ?, ?, ?)
-        """, (
-            event["tipo"],
-            event["ip"],
-            f"Evento automático {event['tipo']}",
-            event["risco"]
-        ))
-
-        conn.commit()
-        conn.close()
-
-        # envia para dashboard em tempo real
-        socketio.emit("new_event", event)
+        socketio.emit("new_event", evento)
 
         time.sleep(2)
 
 
-threading.Thread(target=gerar_eventos, daemon=True).start()
+threading.Thread(
+    target=gerar_eventos,
+    daemon=True
+).start()
 
 
 # =========================
 # HOME
 # =========================
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def home():
-    return redirect("/admin")
+
+    denuncias = []
+
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM denuncias")
+    total = cursor.fetchone()[0]
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM denuncias WHERE tipo='Telefone'"
+    )
+    telefones = cursor.fetchone()[0]
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM denuncias WHERE tipo='PIX'"
+    )
+    pix = cursor.fetchone()[0]
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM denuncias WHERE tipo='Site'"
+    )
+    sites = cursor.fetchone()[0]
+
+    if request.method == "POST":
+
+        pesquisa = request.form["pesquisa"]
+
+        cursor.execute("""
+        SELECT tipo, valor, descricao, risco
+        FROM denuncias
+        WHERE valor LIKE ?
+        ORDER BY id DESC
+        """, (f"%{pesquisa}%",))
+
+        denuncias = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "index.html",
+        denuncias=denuncias,
+        total=total,
+        telefones=telefones,
+        pix=pix,
+        sites=sites
+    )
+
+
+# =========================
+# DENUNCIA
+# =========================
+@app.route("/denuncia", methods=["GET", "POST"])
+def denuncia():
+
+    if request.method == "POST":
+
+        tipo = request.form["tipo"]
+        valor = request.form["valor"]
+        descricao = request.form["descricao"]
+
+        conn = sqlite3.connect("database.db")
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        INSERT INTO denuncias
+        (tipo, valor, descricao, risco)
+        VALUES (?, ?, ?, ?)
+        """, (
+            tipo,
+            valor,
+            descricao,
+            "MEDIUM"
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/")
+
+    return render_template("denuncia.html")
 
 
 # =========================
@@ -96,14 +171,16 @@ def login():
 
     if request.method == "POST":
 
-        user = request.form["usuario"]
-        password = request.form["senha"]
+        usuario = request.form["usuario"]
+        senha = request.form["senha"]
 
-        if user == "admin" and password == "123456":
+        if usuario == "admin" and senha == "123456":
+
             session["admin"] = True
+
             return redirect("/admin")
 
-        return "Login inválido"
+        return "Usuário ou senha inválidos."
 
     return render_template("login.html")
 
@@ -113,12 +190,14 @@ def login():
 # =========================
 @app.route("/logout")
 def logout():
+
     session.clear()
-    return redirect("/login")
+
+    return redirect("/")
 
 
 # =========================
-# ADMIN DASHBOARD
+# ADMIN
 # =========================
 @app.route("/admin")
 def admin():
@@ -126,54 +205,24 @@ def admin():
     if not session.get("admin"):
         return redirect("/login")
 
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    SELECT id, tipo, valor, descricao, risco
-    FROM denuncias
-    ORDER BY id DESC
-    """)
-
-    denuncias = cursor.fetchall()
-
-    # métricas SOC
-    low = medium = high = critical = 0
-
-    for d in denuncias:
-        r = d[4]
-
-        if r == "CRITICAL":
-            critical += 1
-        elif r == "HIGH":
-            high += 1
-        elif r == "MEDIUM":
-            medium += 1
-        else:
-            low += 1
-
-    conn.close()
-
-    return render_template(
-        "admin.html",
-        denuncias=denuncias,
-        low=low,
-        medium=medium,
-        high=high,
-        critical=critical
-    )
+    return render_template("admin.html")
 
 
 # =========================
-# SOCKET CONNECT
+# SOCKET
 # =========================
 @socketio.on("connect")
 def connect():
-    print("Cliente conectado ao SOC realtime")
+    print("Cliente conectado")
 
 
 # =========================
-# RUN (RENDER READY)
+# RUN
 # =========================
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=10000)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
