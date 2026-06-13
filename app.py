@@ -81,6 +81,8 @@ threading.Thread(
 @app.route("/", methods=["GET", "POST"])
 def home():
 
+    print("ENTROU NA HOME")
+
     denuncias = []
 
     conn = sqlite3.connect("database.db")
@@ -168,6 +170,8 @@ def denuncia():
 # =========================
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
+    print("ENTROU NO LOGIN")
 
     if request.method == "POST":
 
