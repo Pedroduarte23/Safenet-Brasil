@@ -6,7 +6,9 @@ import threading
 import time
 
 app = Flask(__name__)
-app.secret_key = "safenet_brasil_2026"
+import os
+
+app.secret_key = os.environ.get("SECRET_KEY")
 
 socketio = SocketIO(
     app,
@@ -170,8 +172,6 @@ def denuncia():
 # =========================
 @app.route("/login", methods=["GET", "POST"])
 def login():
-
-    print("ENTROU NO LOGIN")
 
     if request.method == "POST":
 
